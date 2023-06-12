@@ -1,103 +1,78 @@
-import React, { useState, useEffect } from 'react';
-import {
-  FaEnvelopeOpen,
-  FaUser,
-  FaCalendarTimes,
-  FaMap,
-  FaPhone,
-  FaLock,
-} from 'react-icons/fa';
-const url = 'https://randomuser.me/api/';
-const defaultImage = 'https://randomuser.me/api/portraits/men/75.jpg';
+import React, { useState, useEffect } from "react";
+import { useFetch } from "./useFetch";
+import Follower from "./Follower";
 function App() {
+	const { loading, data } = useFetch();
+	const [page, setPage] = useState(0);
+	const [followers, setFollowers] = useState([]);
 
-  const [ loading, setLoading ] = useState( true );
-  const [ person, setPerson ] = useState( null );
-  const [ title, setTitle ] = useState( 'name' );
-  const [ value, setValue ] = useState( 'random person' );
+	useEffect(() => {
+		if (loading) return;
+		setFollowers(data[page]);
+	}, [loading, page]);
 
+	const handlePage = (index) => {
+		setPage(index);
+	};
 
-  const getPerson = async () => {
-    const response = await fetch( url );
-    const data = await response.json();
-    const person = data.results[ 0 ];
-    const { phone, email } = person;
-    const { large: image } = person.picture;
-    const { login: { password }, } = person;
-    const { first, last } = person.name;
-    const { dob: { age } } = person;
-    const {street:{number,name}} = person.location;
+	const nextPage = () => {
+		setPage((oldPage) => {
+			let nextPage = oldPage + 1;
+			if (nextPage > data.length - 1) {
+				nextPage = 0;
+			}
+			return nextPage;
+		});
+	};
 
-    const newPerson = {
-      image,
-      phone,
-      email,
-      password,
-      age,
-      street:`${number} ${name}`,
-      name:`${first} ${last}`
-    }
+	const prevPage = () => {
+		setPage((oldPage) => {
+			let prevPage = oldPage - 1;
+			if (prevPage <= 0) {
+				prevPage = data.length - 1;
+			}
+			return prevPage;
+		});
+	};
 
-    setPerson(newPerson)
-    setLoading(false)
-    setTitle('name')
-    setValue(newPerson.name)
-  };
-
-  useEffect( () => {
-    getPerson();
-  }, [] );
-
-  const handleValue = ( e ) => {
-   if(e.target.classList.contains('icon')){
-   const newValue = e.target.dataset.label
-   setValue(person[newValue])
-   setTitle(newValue)
-
-   }
-  };
-
-
-  return <main>
-    <div className='block bcg-black'>  </div>
-    <div className='block'>
-      <div className='container'>
-        <img src={ ( person && person.image ) || defaultImage } alt='random person'
-          className='user-img' />
-        <p className='user-title'>my { title }</p>
-        <p className='user-value'> { value }</p>
-        <div className='values-list'>
-          <button className='icon' data-label="name"
-            onMouseOver={ handleValue } >
-            <FaUser />
-          </button>
-          <button className='icon' data-label="email"
-            onMouseOver={ handleValue } >
-            <FaEnvelopeOpen />
-          </button>
-          <button className='icon' data-label="age"
-            onMouseOver={ handleValue } >
-            <FaCalendarTimes />
-          </button>
-          <button className='icon' data-label="street"
-            onMouseOver={ handleValue } >
-            <FaMap />
-          </button>
-          <button className='icon' data-label="phone"
-            onMouseOver={ handleValue } >
-            <FaPhone />
-          </button>
-          <button className='icon' data-label="password"
-            onMouseOver={ handleValue } >
-            <FaLock />
-          </button>
-          <button className='btn' type='button' onClick={getPerson}>
-            { loading ? 'loading...' : 'random user' }
-          </button>
-        </div>
-      </div>
-    </div>
-  </main>;
+	return (
+		<main>
+			<div className='section-title'>
+				<h1>{loading ? "Loading..." : "pagination"}</h1>
+				<div className='underline'></div>
+			</div>
+			<section className='followers'>
+				<div className='container'>
+					{followers.map((follower) => {
+						return <Follower key={follower.id} {...follower} />;
+					})}
+				</div>
+				{!loading && (
+					<div className='btn-container'>
+						<button className='prev-btn' onClick={prevPage}>
+							prev
+						</button>
+						{data.map((item, index) => {
+							return (
+								<button
+									key={index}
+									className={`page-btn  ${
+										index === page ? " active-btn" : null
+									}`}
+									onClick={() => handlePage(index)}
+								>
+									{index + 1}
+								</button>
+							);
+						})}
+						<button className='next-btn' onClick={nextPage}>
+							next
+						</button>
+					</div>
+				)}
+			</section>
+		</main>
+	);
 }
 
 export default App;
